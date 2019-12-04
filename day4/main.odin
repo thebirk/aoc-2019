@@ -12,7 +12,8 @@ part1 :: proc(start, end: int) {
 
         found_double := false;
         prev := rune(0);
-        for r in pass {
+        for i in 0..<6 { // avoid `for r in pass` as that does utf8 decoding
+            r := rune(pass[i]);
             if !found_double && prev == r do found_double = true;
 
             if prev != 0 && digit_value(prev) > digit_value(r) do return false;
