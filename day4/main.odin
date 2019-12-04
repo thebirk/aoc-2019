@@ -13,7 +13,7 @@ part1 :: proc(start, end: int) {
         found_double := false;
         prev := rune(0);
         for r in pass {
-            if !found_double && prev != 0 && prev == r do found_double = true;
+            if !found_double && prev == r do found_double = true;
 
             if prev != 0 && digit_value(prev) > digit_value(r) do return false;
 
@@ -24,7 +24,7 @@ part1 :: proc(start, end: int) {
     }
 
     valids := 0;
-    for i := start; i <= end; i += 1 {
+    for i in start..end {
         pass := fmt.tprintf("%d", i);
 
         if is_valid_password(pass) do valids += 1;
@@ -63,7 +63,7 @@ part2 :: proc(start, end: int) {
     }
 
     valids := 0;
-    for i := start; i <= end; i += 1 {
+    for i in start..end {
         pass := fmt.tprintf("%d", i);
 
         if is_valid_password(pass) do valids += 1;
