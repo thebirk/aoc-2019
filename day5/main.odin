@@ -31,6 +31,10 @@ run_once :: proc(input: []int, user_input: []int) -> int {
         return;
     }
 
+    get_value :: proc(input: []int, arg, mode: int) -> int {
+        return mode == 0 ? input[arg] : arg;
+    }
+
     loop:
     for {
         instruction := input[ip];
@@ -44,8 +48,8 @@ run_once :: proc(input: []int, user_input: []int) -> int {
                 r := input[ip+3];
 
                 input[r] =
-                    (mode_c == 0 ? input[a] : a) +
-                    (mode_b == 0 ? input[b] : b);
+                    get_value(input, a, mode_c) +
+                    get_value(input, b, mode_b);
 
                 ip += 4;
             case 2:
@@ -54,8 +58,8 @@ run_once :: proc(input: []int, user_input: []int) -> int {
                 r := input[ip+3];
 
                 input[r] =
-                    (mode_c == 0 ? input[a] : a) *
-                    (mode_b == 0 ? input[b] : b);
+                    get_value(input, a, mode_c) *
+                    get_value(input, b, mode_b);
 
                 ip += 4;
             case 3:
@@ -68,15 +72,15 @@ run_once :: proc(input: []int, user_input: []int) -> int {
             case 4:
                 src := input[ip+1];
 
-                fmt.printf("%d\n", mode_c == 0 ? input[src] : src);
+                fmt.printf("%d\n", get_value(input, src, mode_c));
 
                 ip += 2;
             case 5:
                 cond := input[ip+1];
                 dst := input[ip+2];
 
-                if (mode_c == 0 ? input[cond] : cond) != 0 {
-                    ip = mode_b == 0 ? input[dst] : dst;
+                if (get_value(input, cond, mode_c)) != 0 {
+                    ip = get_value(input, dst, mode_b);
                 } else {
                     ip += 3;
                 }
@@ -84,8 +88,8 @@ run_once :: proc(input: []int, user_input: []int) -> int {
                 cond := input[ip+1];
                 dst := input[ip+2];
 
-                if (mode_c == 0 ? input[cond] : cond) == 0 {
-                    ip = mode_b == 0 ? input[dst] : dst;
+                if (get_value(input, cond, mode_c)) == 0 {
+                    ip = get_value(input, dst, mode_b);
                 } else {
                     ip += 3;
                 }
@@ -95,8 +99,8 @@ run_once :: proc(input: []int, user_input: []int) -> int {
                 dst := input[ip+3];
 
                 input[dst] =
-                    ((mode_c == 0 ? input[a] : a) <
-                    (mode_b == 0 ? input[b] : b)) ? 1: 0;
+                    (get_value(input, a, mode_c) <
+                    get_value(input, b, mode_b)) ? 1: 0;
 
                 ip += 4;
              case 8:
@@ -105,8 +109,8 @@ run_once :: proc(input: []int, user_input: []int) -> int {
                 dst := input[ip+3];
 
                 input[dst] =
-                    ((mode_c == 0 ? input[a] : a) ==
-                    (mode_b == 0 ? input[b] : b)) ? 1 : 0;
+                    (get_value(input, a, mode_c) ==
+                    get_value(input, b, mode_b)) ? 1: 0;
 
                 ip += 4;
             case 99:
