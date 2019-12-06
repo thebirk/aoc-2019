@@ -1,5 +1,6 @@
 package day6
 
+import "core:os"
 import "core:fmt"
 import "core:strings"
 
@@ -107,6 +108,28 @@ part1 :: proc(input: string) {
     }
 
     root := parse_input(input);
+
+    {
+        builder: strings.Builder;
+        defer strings.destroy_builder(&builder);
+
+        write_node :: proc(node: ^Node, builder: ^strings.Builder) {
+            if node.parent != nil {
+                parent := fmt.tprintf("N_%s -> N_%s;\n", node.parent.name, node.name);
+                strings.write_string(builder, parent);
+            }
+            for c in node.children {
+                write_node(c, builder);
+            }
+        }
+
+        strings.write_string(&builder, "digraph system {\n");
+        write_node(root, &builder);
+        strings.write_string(&builder, "}\n");
+
+        os.write_entire_file("test.dot", builder.buf[:]);
+    }
+
     direct, indirect := eval_node(root, 0, 0);
     fmt.printf("part1: direct %d, indirect: %d, checksum: %d\n", direct, indirect, direct+indirect);
 }
@@ -114,9 +137,12 @@ part1 :: proc(input: string) {
 part2 :: proc(input: string) {
     Node :: struct {
         name: string,
-        directly_calculated: bool,
         parent: ^Node,
         children: [dynamic]^Node,
+
+        removed: bool,
+        dist: int,
+        prev: ^Node,
     };
 
     parse_entry :: proc(input: string) -> (string, string, string) {
@@ -152,6 +178,7 @@ part2 :: proc(input: string) {
         make_node :: proc(name: string) -> ^Node {
             n := new(Node);
             n.name = strings.clone(name);
+            n.dist = 999999;
             return n;
         }
 
@@ -183,69 +210,65 @@ part2 :: proc(input: string) {
         return root, you;
     }
 
-    eval_node :: proc(node: ^Node, direct, indirect: int) -> (int, int) {
-        direct := direct;
-        indirect := indirect;
+    hops_to_santa :: proc(root: ^Node, you: ^Node) -> int {
+        q: [dynamic]^Node;
+        you.dist = 0;
 
-        if !node.directly_calculated && node.parent != nil {
-            direct += 1;
-            node.directly_calculated = true;
-        }
-
-        indirect += eval_node_indirect(node);
-
-        for c in node.children {
-            direct, indirect = eval_node(c, direct, indirect);
-        }
-
-        return direct, indirect;
-    }
-
-    eval_node_indirect :: proc(node: ^Node) -> int {
-        n := node.parent;
-        indirect := 0;
-
-        for n != nil {
-            if n != node.parent {
-                indirect += 1;
+        add_node :: proc(list: ^[dynamic]^Node, n: ^Node) {
+            append(list, n);
+            for c in n.children {
+                add_node(list, c);
             }
-            n = n.parent;
         }
+        add_node(&q, root);
 
-        return indirect;
-    }
-
-    transfers_from_santa :: proc(node: ^Node) -> int {
-        result := 9999;
-
-        for c in node.children {
-            if c.name == "SAN" {
-                return 0;
+        for len(q) > 0 {
+            shortest_dist := 99999;
+            shortest_i := -1;
+            for v, i in q {
+                if v.dist <= shortest_dist {
+                    shortest_dist = v.dist;
+                    shortest_i = i;
+                }
             }
 
-            tfs := transfers_from_santa(c);
-            if tfs < result do result = tfs;
+            u := q[shortest_i]; ordered_remove(&q, shortest_i);
+            u.removed = true;
+
+            if u.name == "SAN" {
+                // deduct 2 for you own hop and the hop to santa
+                return u.dist - 2;
+            }
+
+            if u.parent != nil && !u.parent.removed {
+                v := u.parent;
+                tot := u.dist + 1;
+                if tot < v.dist {
+                    v.dist = tot;
+                    v.prev = u;
+                }
+            }
+
+            for v in u.children {
+                if v.removed do continue;
+                tot := u.dist + 1;
+                if tot < v.dist {
+                    v.dist = tot;
+                    v.prev = u;
+                }
+            }
         }
 
-        return result;
-    }
-
-    hops_to_santa :: proc(node: ^Node) -> int {
-        result := 0;
-        for {
-
-        }
-        return result;
+        return -1;
     }
 
     root, you := parse_input(input);
-    direct, indirect := eval_node(root, 0, 0);
-    //fmt.printf("part1: direct %d, indirect: %d, checksum: %d\n", direct, indirect, direct+indirect);
+    fmt.printf("part2: hops to santa %d\n", hops_to_santa(root, you));
 }
 
 main :: proc() {
     part1(input);
-    //part2(input);
+    part2(input);
 }
 
 input := `D5Q)KRQ
