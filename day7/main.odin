@@ -2,7 +2,7 @@ package day7
 
 import "core:fmt"
 
-run_once :: proc(ip: int, input: []int, user_input: []int) -> (int, int, bool) {
+run_once :: proc(ip: int, input: []int, user_input: []int) -> (output: int, ip_out: int, hlt: bool) {
     //disasm();
 
     ip := ip;
@@ -206,17 +206,19 @@ part2 :: proc() {
             ip: int,
         };
         amps: [5]Amp;
-        for i in 0..4 {
+        for _, i in amps {
             amps[i].state = make([]int, len(input));
             copy(amps[i].state[:], input[:]);
         }
 
+        // initialize for feedback mode
         hlt := false;
         for phase, i in conf {
             amp_in, amps[i].ip, hlt = run_once(amps[i].ip, amps[i].state[:], []int{phase, amp_in});
         }
         last_E = amp_in;
 
+        // run until hlt
         hlt_loop:
         for hlt == false {
             for phase, i in conf {
