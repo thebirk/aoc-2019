@@ -2,10 +2,10 @@ package day7
 
 import "core:fmt"
 
-run_once :: proc(input: []int, user_input: []int) -> (int, bool) {
+run_once :: proc(ip: int, input: []int, user_input: []int) -> (int, int, bool) {
     //disasm();
 
-    ip := 0;
+    ip := ip;
     uip := 0;
 
     decode_instruction :: proc(instr: int) -> (a, b, c, op: int) {
@@ -72,7 +72,8 @@ run_once :: proc(input: []int, user_input: []int) -> (int, bool) {
             case 4:
                 src := input[ip+1];
 
-                return get_value(input, src, mode_c), false;
+                ip += 2;
+                return get_value(input, src, mode_c), ip, false;
                 //fmt.printf("%d\n", get_value(input, src, mode_c));
 
                 //ip += 2;
@@ -121,7 +122,7 @@ run_once :: proc(input: []int, user_input: []int) -> (int, bool) {
         }
     }
 
-    return input[0], true;
+    return input[0], ip, true;
 }
 
 part1 :: proc() {
@@ -156,7 +157,7 @@ part1 :: proc() {
 
         for phase in conf {
             copy := input;
-            amp_in, _ = run_once(copy[:], []int{phase, amp_in});
+            amp_in, _, _ = run_once(0, copy[:], []int{phase, amp_in});
         }
 
 
@@ -200,16 +201,26 @@ part2 :: proc() {
         amp_in := 0;
         last_E := 0;
 
-        fmt.println("part2: conf", conf);
+        Amp :: struct {
+            state: []int,
+            ip: int,
+        };
+        amps: [5]Amp;
+        for i in 0..4 {
+            amps[i].state = make([]int, len(input));
+            copy(amps[i].state[:], input[:]);
+        }
 
         hlt := false;
+        for phase, i in conf {
+            amp_in, amps[i].ip, hlt = run_once(amps[i].ip, amps[i].state[:], []int{phase, amp_in});
+        }
+        last_E = amp_in;
+
         hlt_loop:
-        for {
-            for phase in conf {
-                copy := input;
-                params := [?]int{phase, amp_in};
-                amp_in, hlt = run_once(copy[:], params[:]);
-                fmt.println("amp_in:", amp_in);
+        for hlt == false {
+            for phase, i in conf {
+                amp_in, amps[i].ip, hlt = run_once(amps[i].ip, amps[i].state[:], []int{amp_in});
                 if hlt do break hlt_loop;
             }
 
