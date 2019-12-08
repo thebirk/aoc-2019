@@ -74,9 +74,6 @@ run_once :: proc(ip: int, input: []int, user_input: []int) -> (output: int, ip_o
 
                 ip += 2;
                 return get_value(input, src, mode_c), ip, false;
-                //fmt.printf("%d\n", get_value(input, src, mode_c));
-
-                //ip += 2;
             case 5:
                 cond := input[ip+1];
                 dst := input[ip+2];
@@ -201,11 +198,7 @@ part2 :: proc() {
         amp_in := 0;
         last_E := 0;
 
-        Amp :: struct {
-            state: []int,
-            ip: int,
-        };
-        amps: [5]Amp;
+        amps: [5]struct{state: []int, ip: int};
         for _, i in amps {
             amps[i].state = make([]int, len(input));
             copy(amps[i].state[:], input[:]);
