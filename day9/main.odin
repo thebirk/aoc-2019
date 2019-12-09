@@ -88,8 +88,12 @@ run :: proc(using ic: ^IntCodeMachine, user_input: []int) -> (output: int, hlt: 
                 ip += 2;
 
                 v := get_value(ic, src, mode_c);
-                if return_on_output do return v, false;
-                else do fmt.printf("%d\n", v);
+
+                if return_on_output {
+                    return v, false;
+                } else {
+                    fmt.printf("%d\n", v);
+                }
             case 5:
                 cond := mem[ip+1];
                 dst := mem[ip+2];
@@ -183,7 +187,7 @@ part2 :: proc() {
     mem.zero_slice(ic.mem);
     copy(ic.mem, input[:]);
 
-    res, hlt := run(&ic, []int{2});
+    res, _ := run(&ic, []int{2});
     fmt.printf("part2: BOOST returned the following coordinates: %v\n", res);
 }
 
