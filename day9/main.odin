@@ -45,6 +45,15 @@ run :: proc(using ic: ^IntCodeMachine, user_input: []int) -> (output: int, hlt: 
         }
     }
 
+    write_value :: proc(using ic: ^IntCodeMachine, arg, mode, value: int) {
+        switch mode {
+        case 0: mem[arg] = value;
+        case 1: fmt.panicf("trying to write to argument with mode 1(immediate)!");
+        case 2: mem[rel_base+arg] = value;
+        case: fmt.panicf("unsupported mode %d", mode);
+        }
+    }
+
     loop:
     for {
         instruction := mem[ip];
@@ -57,10 +66,10 @@ run :: proc(using ic: ^IntCodeMachine, user_input: []int) -> (output: int, hlt: 
                 b := mem[ip+2];
                 r := mem[ip+3];
 
-                if mode_a == 2 do r = rel_base + r;
-                mem[r] =
+                write_value(ic, r, mode_a,
                     get_value(ic, a, mode_c) +
-                    get_value(ic, b, mode_b);
+                    get_value(ic, b, mode_b)
+                );
 
                 ip += 4;
             case 2:
@@ -68,17 +77,16 @@ run :: proc(using ic: ^IntCodeMachine, user_input: []int) -> (output: int, hlt: 
                 b := mem[ip+2];
                 r := mem[ip+3];
 
-                if mode_a == 2 do r = rel_base + r;
-                mem[r] =
+                write_value(ic, r, mode_a,
                     get_value(ic, a, mode_c) *
-                    get_value(ic, b, mode_b);
+                    get_value(ic, b, mode_b)
+                );
 
                 ip += 4;
             case 3:
                 dst := mem[ip+1];
 
-                if mode_c == 2 do dst = rel_base + dst;
-                mem[dst] = user_input[uip];
+                write_value(ic, dst, mode_c, user_input[uip]);
                 uip += 1;
 
                 ip += 2;
@@ -117,13 +125,10 @@ run :: proc(using ic: ^IntCodeMachine, user_input: []int) -> (output: int, hlt: 
                 b := mem[ip+2];
                 dst := mem[ip+3];
 
-                if mode_a == 2 {
-                    dst = rel_base+dst;
-                }
-
-                mem[dst] =
+                write_value(ic, dst, mode_a,
                     (get_value(ic, a, mode_c) <
-                    get_value(ic, b, mode_b)) ? 1: 0;
+                    get_value(ic, b, mode_b)) ? 1: 0
+                );
 
                 ip += 4;
              case 8:
@@ -131,13 +136,10 @@ run :: proc(using ic: ^IntCodeMachine, user_input: []int) -> (output: int, hlt: 
                 b := mem[ip+2];
                 dst := mem[ip+3];
 
-                if mode_a == 2 {
-                    dst = rel_base+dst;
-                }
-
-                mem[dst] =
+                write_value(ic, dst, mode_a,
                     (get_value(ic, a, mode_c) ==
-                    get_value(ic, b, mode_b)) ? 1: 0;
+                    get_value(ic, b, mode_b)) ? 1: 0
+                );
 
                 ip += 4;
             case 9:
