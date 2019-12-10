@@ -5,6 +5,13 @@ import "core:mem"
 import "core:math"
 import linalg "core:math/linalg"
 
+when ODIN_OS == "windows" do foreign import libc "system:libcmt.lib";
+else do foreign import libc "system:c";
+
+foreign libc {
+    atan2 :: proc"c"(y, x: f64) -> f64 ---;
+}
+
 part1 :: proc(input: string) {
     parse_input :: proc(input: string) -> ([]bool, int, int) {
         width := 0;
@@ -29,74 +36,58 @@ part1 :: proc(input: string) {
         return result[:], width, y;
     };
 
-    cast_ray :: proc(m: []bool, m_w, m_h: int, start: [2]f32, dir: [2]f32) -> (bool, int, int) {
-        pos := start + dir;
-        dir := linalg.normalize(dir) / 1024.0;
-
-        for {
-            if pos.x < 0 || pos.x >= f32(m_w) || pos.y < 0  || pos.y >= f32(m_h) do return false, 0, 0;
-
-            if m[int(pos.x)+int(pos.y)*m_w] == true {
-                centre := [2]f32{math.floor(pos.x) + 0.5, math.floor(pos.y) + 0.5};
-
-                if linalg.length(centre - pos) < 0.1 {
-                    return true, int(pos.x), int(pos.y);
-                }
-            }
-
-            pos += dir;
-        }
-
-        return false, 0, 0;
-    }
-
     m, w, h := parse_input(input);
 
     best_visible_asteroids := -1;
     best_pos := [2]int{0, 0};
 
-    marked_map := make([]bool, w*h);
     totals := make([]int, w*h);
-
-    SUBDIVISIONS :: 1000;
-    angle_step := f32(math.PI*2 / SUBDIVISIONS);
-    angle_cos := math.cos(angle_step);
-    angle_sin := math.sin(angle_step);
+    angles: map[f64]f64;
 
     for y in 0..<h {
         for x in 0..<w {
             if m[x+y*w] == false do continue;
 
-            visible_asteroids := 0;
+            xx := f64(x);
+            yy := f64(y);
 
-            marked_map[x+y*w] = true;
+            for j in 0..<h {
+                for i in 0..<w {
+                    if m[i+j*w] == false do continue;
+                    if i == x && j == y do continue;
 
-            pos := [2]f32{f32(x)+0.5, f32(y)+0.5};
-            dir := [2]f32{1, 0};
-            for i in 0..<SUBDIVISIONS {
-                hit, hx, hy := cast_ray(m, w, h, pos, dir);
-                if hit && marked_map[hx+hy*w] == false {
-                    visible_asteroids += 1;
-                    marked_map[hx+hy*w] = true;
+                    ii := f64(i);
+                    jj := f64(j);
+
+                    dx := xx - ii;
+                    dy := yy - jj;
+                    ang := atan2(dy, dx);
+
+                    ang = math.ceil(ang*10000.0) / 10000.0;
+
+                    dist := math.sqrt(dx*dx+dy*dy);
+                    if _, ok := angles[ang]; !ok {
+                        angles[ang] = dist;
+                    } else {
+                        if angles[ang] > dist {
+                            angles[ang] = dist;
+                        }
+                    }
                 }
-
-                dir = {
-                    f32(dir.x) * angle_cos - f32(dir.y) * angle_sin,
-                    f32(dir.x) * angle_sin + f32(dir.y) * angle_cos
-                };
             }
 
-            if visible_asteroids > best_visible_asteroids {
-                best_visible_asteroids = visible_asteroids;
+            if len(angles) > best_visible_asteroids {
+                best_visible_asteroids = len(angles);
                 best_pos = {x, y};
             }
 
-            totals[x+y*w] = visible_asteroids;
-            mem.zero_slice(marked_map);
+            totals[x+y*w] = len(angles);
+
+            clear(&angles);
         }
     }
 
-    for y in 0..<h {
+    if false do for y in 0..<h {
         for x in 0..<w {
             if totals[x+y*w] == 0 do fmt.printf(".");
             else do fmt.printf("%v", totals[x+y*w]);
@@ -118,26 +109,7 @@ part2 :: proc(input: string) {
 }
 
 main :: proc() {
-    part1(`.#..##.###...#######
-##.############..##.
-.#.######.########.#
-.###.#######.####.#.
-#####.##.#.##.###.##
-..#####..#.#########
-####################
-#.####....###.#.#.##
-##.#################
-#####.##.###..####..
-..######..##.#######
-####.##.####...##..#
-.#####..#.######.###
-##...#.##########...
-#.##########.#######
-.####.#.###.###.#.##
-....##.##.###..#####
-.#.#.###########.###
-#.#.#.#####.####.###
-###.##.####.##.#..##`);
+    part1(input);
     //part2(input);
 }
 
