@@ -207,8 +207,6 @@ part1 :: proc(input: []int) {
         case 180: robot.y += 1;
         case 270: robot.x -= 1;
         }
-
-        fmt.println(robot.x, robot.y, robot.dir);
     }
 
     painted := 0;
@@ -271,10 +269,11 @@ part2 :: proc(input: []int) {
     out: [dynamic]u8;
     for y in 0..<HULL_HEIGHT {
         for x in 0..<HULL_WIDTH {
-            append(&out, robot.hull[x+y*HULL_WIDTH] > 0 ? '#' : ' ');
+            append(&out, robot.hull[x+y*HULL_WIDTH] > 0 ? '@' : ' ');
         }
         append(&out, '\n');
     }
+    fmt.println("part2: hull registration:");
     fmt.println(string(out[:]));
 }
 
